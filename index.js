@@ -139,13 +139,13 @@ StatsServer.prototype.aggregateStats = function() {
 
       this.data.processes[workerStats.id] = workerStats;
 
-      if(this.data.apps[workerStats.filename] == undefined) { this.data.apps[workerStats.filename] = { workers: 0, rss: 0, heapTotal: 0, heapUsed: 0 }; }
+      if(this.data.apps[workerStats.filename] == undefined) { this.data.apps[workerStats.filename] = { workers: 0, rss: 0, heapTotal: 0, heapUsed: 0, eventLoopAvg: 0 }; }
 
       this.data.apps[workerStats.filename].workers++;
       this.data.apps[workerStats.filename].rss += workerStats.memory.rss;
       this.data.apps[workerStats.filename].heapTotal += workerStats.memory.heapTotal;
       this.data.apps[workerStats.filename].heapUsed += workerStats.memory.heapUsed;
-      this.data.apps[workerStats.filename].eventLoopAvg += workerStats.eventLoopLag;
+      this.data.apps[workerStats.filename].eventLoopAvg += workerStats.eventLoop;
 
       this.data.aggregated.workers++;
       this.data.aggregated.rss += workerStats.memory.rss;
