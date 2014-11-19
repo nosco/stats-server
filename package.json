@@ -1,6 +1,6 @@
 {
   "name": "stats-server",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Stats Server enables a webpage with stats for you app",
   "keywords": [
     "json",

@@ -108,7 +108,8 @@ StatsServer.prototype.aggregateStats = function() {
     id: 0,
     pid: process.pid,
     uptime: process.uptime(),
-    filename: process.argv[1]
+    filename: process.argv[1],
+    eventLoop: toobusy.lag()
   }};
 
   this.data.apps = {};
@@ -123,7 +124,8 @@ StatsServer.prototype.aggregateStats = function() {
     workers: 0,
     rss: masterMem.rss,
     heapTotal: masterMem.heapTotal,
-    heapUsed: masterMem.heapUsed
+    heapUsed: masterMem.heapUsed,
+    eventLoopAvg: toobusy.lag()
   };
 
   for(var id in cluster.workers) {
@@ -140,19 +142,38 @@ StatsServer.prototype.aggregateStats = function() {
       this.data.apps[workerStats.filename].rss += workerStats.memory.rss;
       this.data.apps[workerStats.filename].heapTotal += workerStats.memory.heapTotal;
       this.data.apps[workerStats.filename].heapUsed += workerStats.memory.heapUsed;
+      this.data.apps[workerStats.filename].eventLoopAvg += workerStats.eventLoopLag;
 
       this.data.aggregated.workers++;
       this.data.aggregated.rss += workerStats.memory.rss;
       this.data.aggregated.heapTotal += workerStats.memory.heapTotal;
       this.data.aggregated.heapUsed += workerStats.memory.heapUsed;
+      this.data.aggregated.eventLoopAvg += workerStats.eventLoop;
     }
+  }
+
+  this.data.aggregated.eventLoopAvg = parseInt(this.data.aggregated.eventLoopAvg / this.data.aggregated.processes);
+  for(var fileName in this.data.apps) {
+    this.data.apps[fileName].eventLoopAvg = parseInt(this.data.apps[fileName].eventLoopAvg / this.data.apps[fileName].workers);
   }
 };
 
 if(cluster.isWorker && cluster.worker) {
   process.on('message', function(msg) {
+
     if(msg.cmd && (msg.cmd == 'stats-server:send stats')) {
-      process.send({ cmd: 'stats-server:stats', data: { memory: process.memoryUsage(), id: cluster.worker.id, pid: process.pid, uptime: process.uptime(), filename: process.argv[1] } });
+      process.send({
+        cmd: 'stats-server:stats',
+        data: {
+          memory: process.memoryUsage(),
+          id: cluster.worker.id,
+          pid: process.pid,
+          uptime: process.uptime(),
+          filename: process.argv[1],
+          eventLoop: toobusy.lag()
+        }
+      });
+
     }
   });
 }
