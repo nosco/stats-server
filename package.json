@@ -1,0 +1,36 @@
+{
+  "name": "stats-server",
+  "version": "0.1.0",
+  "description": "Stats Server enables a webpage with stats for you app",
+  "keywords": [
+    "json",
+    "stats",
+    "statistics"
+  ],
+  "author": "Dan Larsen",
+  "maintainers": [
+    {
+      "name": "Dan Larsen",
+      "email": "dan@techba.se",
+      "url": "http://github.com/morphar"
+    }
+  ],
+  "repository": {
+    "type": "git",
+    "url": "http://github.com/nosco/stats-server.git"
+  },
+  "github": "http://github.com/nosco/stats-server",
+  "bugs": {
+    "url": "http://github.com/nosco/stats-server/issues"
+  },
+  "dependencies": {
+    "toobusy": "^0.2.4"
+  },
+  "devDependencies": {},
+  "scripts": {},
+  "license": "MIT",
+  "main": "./index.js",
+  "engines": {
+    "node": ">=0.10.28"
+  }
+}
