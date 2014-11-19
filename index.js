@@ -2,23 +2,6 @@ var os = require('os');
 var http = require('http');
 var toobusy = require('toobusy');
 
-// Linux std. uptime data collection
-// The numbers are calculated every 5 secs.
-
-// @todo Is it possible to check, whether this is a cluster and then ONLY load
-// stuff when we are in the master process?
-
-// How this should work:
-// - detect mode: cluster or standalone
-// - if running like standalone, but cluster detected: throw
-// - if running like cluster, but is standalone, run as standalone
-//
-// The reason for throw'ing, when running as standalone in cluster setup, is
-// that we will only be able to show a single process' info.
-//
-// Problems:
-// - It's "easy" to detect cluster in standalone mode, but not vice versa
-
 var cluster = require('cluster');
 
 var _singleton = null;
@@ -48,7 +31,6 @@ StatsServer.prototype.setupMessageListeners = function() {
 };
 
 StatsServer.prototype.startListeningToWorker = function(worker) {
-  console.log('starting to listen');
   worker.on('message', this.messageHandler.bind(this));
   worker.send({ cmd: 'stats-server:send stats' });
 };
@@ -82,9 +64,7 @@ StatsServer.prototype.startHttpServer = function() {
 };
 
 StatsServer.prototype.handleRequest = function(request, response) {
-console.log('before');
   this.aggregateStats();
-console.log('after');
   var format = 'json';
 
   if(request.url.match(/format=(html|json)/)) {
@@ -177,14 +157,3 @@ if(cluster.isWorker && cluster.worker) {
     }
   });
 }
-
-
-
-// var loopLag = 0;
-// server.on('connection', function() {
-//   loopLag = toobusy.lag();
-// });
-
-// var statsServer =
-// statsServer.listen(config.statsServer.port);
-// console.log('Stats server listening on port '+config.statsServer.port);
