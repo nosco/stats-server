@@ -12,7 +12,7 @@ var StatsServer = function(config) {
   if(_singleton) return _singleton;
   _singleton = this;
 
-  this.data = { };
+  this.data = { aggregated: {}, apps: {}, processes: {} };
   this.config = config || { port: 8181 };
 
   this.getBasicInfo();
@@ -111,7 +111,6 @@ StatsServer.prototype.aggregateStats = function() {
     filename: process.argv[1]
   }};
 
-  this.data.aggregated = {};
   this.data.apps = {};
 
   this.data.aggregated = {
