@@ -12,8 +12,11 @@ var StatsServer = function(config) {
   if(_singleton) return _singleton;
   _singleton = this;
 
+  this.config = { port: 8181, updateInterval: 1000 };
+  config = config || {};
+  for(var i in config) { this.config[i] = config[i]; };
+
   this.data = { aggregated: {}, apps: {}, processes: {} };
-  this.config = config || { port: 8181 };
 
   this.getBasicInfo();
 
@@ -26,7 +29,7 @@ StatsServer.prototype.setupMessageListeners = function() {
   if(cluster.isMaster) {
     cluster.on('online', this.startListeningToWorker.bind(this));
     cluster.on('exit', this.stopListeningToWorker.bind(this));
-    statsTimer = setInterval(this.requestStats, 5000);
+    statsTimer = setInterval(this.requestStats, this.config.updateInterval);
   }
 };
 
