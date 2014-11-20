@@ -112,7 +112,8 @@ StatsServer.prototype.aggregateStats = function() {
     pid: process.pid,
     uptime: process.uptime(),
     filename: process.argv[1],
-    eventLoop: toobusy.lag()
+    lagmax: process.lagmax(),
+    lagavg: process.lagavg()
   }};
 
   this.data.apps = {};
@@ -128,7 +129,8 @@ StatsServer.prototype.aggregateStats = function() {
     rss: masterMem.rss,
     heapTotal: masterMem.heapTotal,
     heapUsed: masterMem.heapUsed,
-    eventLoopAvg: toobusy.lag()
+    lagmax: 0,
+    lagavg: [0, 0, 0]
   };
 
   for(var id in cluster.workers) {
@@ -139,27 +141,72 @@ StatsServer.prototype.aggregateStats = function() {
 
       this.data.processes[workerStats.id] = workerStats;
 
-      if(this.data.apps[workerStats.filename] == undefined) { this.data.apps[workerStats.filename] = { workers: 0, rss: 0, heapTotal: 0, heapUsed: 0, eventLoopAvg: 0 }; }
+      if(this.data.apps[workerStats.filename] == undefined) {
+        this.data.apps[workerStats.filename] = {
+          workers: 0,
+          rss: 0,
+          heapTotal: 0,
+          heapUsed: 0,
+          lagmax: 0,
+          lagavg: [0, 0, 0]
+        };
+      }
 
       this.data.apps[workerStats.filename].workers++;
       this.data.apps[workerStats.filename].rss += workerStats.memory.rss;
       this.data.apps[workerStats.filename].heapTotal += workerStats.memory.heapTotal;
       this.data.apps[workerStats.filename].heapUsed += workerStats.memory.heapUsed;
-      this.data.apps[workerStats.filename].eventLoopAvg += workerStats.eventLoop;
+
+      this.data.apps[workerStats.filename].lagmax = Math.max(this.data.apps[workerStats.filename].lagmax, workerStats.lagmax);
+
+      this.data.apps[workerStats.filename].lagavg[0] += workerStats.lagavg[0];
+      this.data.apps[workerStats.filename].lagavg[1] += workerStats.lagavg[1];
+      this.data.apps[workerStats.filename].lagavg[2] += workerStats.lagavg[2];
 
       this.data.aggregated.workers++;
       this.data.aggregated.rss += workerStats.memory.rss;
       this.data.aggregated.heapTotal += workerStats.memory.heapTotal;
       this.data.aggregated.heapUsed += workerStats.memory.heapUsed;
-      this.data.aggregated.eventLoopAvg += workerStats.eventLoop;
+      this.data.aggregated.lagmax = Math.max(this.data.aggregated.lagmax, workerStats.lagmax);
+      this.data.aggregated.lagavg[0] += workerStats.lagavg[0];
+      this.data.aggregated.lagavg[1] += workerStats.lagavg[1];
+      this.data.aggregated.lagavg[2] += workerStats.lagavg[2];
     }
   }
 
-  this.data.aggregated.eventLoopAvg = parseInt(this.data.aggregated.eventLoopAvg / this.data.aggregated.processes);
+  this.data.aggregated.lagavg[0] = (this.data.aggregated.lagavg[0] / this.data.aggregated.processes);
+  this.data.aggregated.lagavg[1] = (this.data.aggregated.lagavg[1] / this.data.aggregated.processes);
+  this.data.aggregated.lagavg[2] = (this.data.aggregated.lagavg[2] / this.data.aggregated.processes);
+
   for(var fileName in this.data.apps) {
-    this.data.apps[fileName].eventLoopAvg = parseInt(this.data.apps[fileName].eventLoopAvg / this.data.apps[fileName].workers);
+    this.data.apps[fileName].lagavg[0] = (this.data.apps[fileName].lagavg[0] / this.data.apps[fileName].workers);
+    this.data.apps[fileName].lagavg[1] = (this.data.apps[fileName].lagavg[1] / this.data.apps[fileName].workers);
+    this.data.apps[fileName].lagavg[2] = (this.data.apps[fileName].lagavg[2] / this.data.apps[fileName].workers);
   }
 };
+
+// Setting up running averages of lag
+process.lagLog = [];
+setInterval(function() {
+  process.lagLog.push(toobusy.lag());
+  process.lagLog = process.lagLog.slice(-900);
+}, 1000);
+
+process.lagmax = function() {
+  return Math.max.apply(this, process.lagLog);
+};
+
+process.lagavg = function() {
+  var lagLogCount = process.lagLog.length;
+  if(!lagLogCount) return [0, 0, 0];
+
+  return [
+    ( process.lagLog.slice(-60).reduce(function(a,b) { return a+b;}) / Math.min( 60, lagLogCount) ),
+    ( process.lagLog.slice(-300).reduce(function(a,b) { return a+b;}) / Math.min(300, lagLogCount) ),
+    ( process.lagLog.slice(-900).reduce(function(a,b) { return a+b;}) / Math.min(900, lagLogCount) )
+  ];
+};
+
 
 if(cluster.isWorker && cluster.worker) {
   process.on('message', function(msg) {
@@ -173,7 +220,8 @@ if(cluster.isWorker && cluster.worker) {
           pid: process.pid,
           uptime: process.uptime(),
           filename: process.argv[1],
-          eventLoop: toobusy.lag()
+          lagmax: process.lagmax(),
+          lagavg: process.lagavg()
         }
       });
 
