@@ -89,12 +89,15 @@ StatsServer.prototype.handleRequest = function(request, response) {
 
 StatsServer.prototype.getBasicInfo = function() {
   // Get basic info on this process
+  this.data.uptime = 0;
+
   this.data.os = {
     type: os.type(),
     release: os.release(),
     platform: os.platform(),
     hostname: os.hostname()
   };
+
   this.data.system = {
     pid: process.pid,
     architecture: os.arch(),
@@ -124,6 +127,8 @@ StatsServer.prototype.aggregateStats = function() {
     freemem: os.freemem(),
     usedmem: (os.totalmem() - os.freemem()),
     cpus: os.cpus().length,
+    uptime: process.uptime(),
+    uptimeavg: 0,
     processes: 1,
     workers: 0,
     rss: masterMem.rss,
@@ -144,6 +149,7 @@ StatsServer.prototype.aggregateStats = function() {
       if(this.data.apps[workerStats.filename] == undefined) {
         this.data.apps[workerStats.filename] = {
           workers: 0,
+          uptimeavg: 0,
           rss: 0,
           heapTotal: 0,
           heapUsed: 0,
@@ -153,6 +159,7 @@ StatsServer.prototype.aggregateStats = function() {
       }
 
       this.data.apps[workerStats.filename].workers++;
+      this.data.apps[workerStats.filename].uptimeavg += workerStats.uptime;
       this.data.apps[workerStats.filename].rss += workerStats.memory.rss;
       this.data.apps[workerStats.filename].heapTotal += workerStats.memory.heapTotal;
       this.data.apps[workerStats.filename].heapUsed += workerStats.memory.heapUsed;
@@ -164,6 +171,7 @@ StatsServer.prototype.aggregateStats = function() {
       this.data.apps[workerStats.filename].lagavg[2] += workerStats.lagavg[2];
 
       this.data.aggregated.workers++;
+      this.data.aggregated.uptimeavg += workerStats.uptime;
       this.data.aggregated.rss += workerStats.memory.rss;
       this.data.aggregated.heapTotal += workerStats.memory.heapTotal;
       this.data.aggregated.heapUsed += workerStats.memory.heapUsed;
@@ -174,11 +182,13 @@ StatsServer.prototype.aggregateStats = function() {
     }
   }
 
+  this.data.aggregated.uptimeavg = (this.data.aggregated.uptimeavg / this.data.aggregated.workers);
   this.data.aggregated.lagavg[0] = (this.data.aggregated.lagavg[0] / this.data.aggregated.processes);
   this.data.aggregated.lagavg[1] = (this.data.aggregated.lagavg[1] / this.data.aggregated.processes);
   this.data.aggregated.lagavg[2] = (this.data.aggregated.lagavg[2] / this.data.aggregated.processes);
 
   for(var fileName in this.data.apps) {
+    this.data.apps[fileName].uptimeavg = (this.data.apps[fileName].uptimeavg / this.data.apps[fileName].workers);
     this.data.apps[fileName].lagavg[0] = (this.data.apps[fileName].lagavg[0] / this.data.apps[fileName].workers);
     this.data.apps[fileName].lagavg[1] = (this.data.apps[fileName].lagavg[1] / this.data.apps[fileName].workers);
     this.data.apps[fileName].lagavg[2] = (this.data.apps[fileName].lagavg[2] / this.data.apps[fileName].workers);
