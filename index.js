@@ -211,9 +211,9 @@ process.lagavg = function() {
   if(!lagLogCount) return [0, 0, 0];
 
   return [
-    ( process.lagLog.slice(-60).reduce(function(a,b) { return a+b;}) / Math.min( 60, lagLogCount) ),
-    ( process.lagLog.slice(-300).reduce(function(a,b) { return a+b;}) / Math.min(300, lagLogCount) ),
-    ( process.lagLog.slice(-900).reduce(function(a,b) { return a+b;}) / Math.min(900, lagLogCount) )
+    ( process.lagLog.slice( -5).reduce(function(a,b) { return a+b;}) / Math.min( 5, lagLogCount) ),
+    ( process.lagLog.slice(-15).reduce(function(a,b) { return a+b;}) / Math.min(15, lagLogCount) ),
+    ( process.lagLog.slice(-60).reduce(function(a,b) { return a+b;}) / Math.min(60, lagLogCount) ),
   ];
 };
 
