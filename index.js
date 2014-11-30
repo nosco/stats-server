@@ -116,7 +116,9 @@ StatsServer.prototype.aggregateStats = function() {
     uptime: process.uptime(),
     filename: process.argv[1],
     lagmax: process.lagmax(),
-    lagavg: process.lagavg()
+    lagavg: process.lagavg(),
+    activeHandles: process._getActiveHandles().length,
+    activeRequests: process._getActiveRequests().length
   }};
 
   this.data.apps = {};
@@ -135,7 +137,9 @@ StatsServer.prototype.aggregateStats = function() {
     heapTotal: masterMem.heapTotal,
     heapUsed: masterMem.heapUsed,
     lagmax: 0,
-    lagavg: [0, 0, 0]
+    lagavg: [0, 0, 0],
+    activeHandles: process._getActiveHandles().length,
+    activeRequests: process._getActiveRequests().length
   };
 
   for(var id in cluster.workers) {
@@ -154,7 +158,9 @@ StatsServer.prototype.aggregateStats = function() {
           heapTotal: 0,
           heapUsed: 0,
           lagmax: 0,
-          lagavg: [0, 0, 0]
+          lagavg: [0, 0, 0],
+          activeHandles: 0,
+          activeRequests: 0
         };
       }
 
@@ -170,6 +176,9 @@ StatsServer.prototype.aggregateStats = function() {
       this.data.apps[workerStats.filename].lagavg[1] += workerStats.lagavg[1];
       this.data.apps[workerStats.filename].lagavg[2] += workerStats.lagavg[2];
 
+      this.data.apps[workerStats.filename].activeHandles += workerStats.activeHandles;
+      this.data.apps[workerStats.filename].activeRequests += workerStats.activeRequests;
+
       this.data.aggregated.workers++;
       this.data.aggregated.uptimeavg += workerStats.uptime;
       this.data.aggregated.rss += workerStats.memory.rss;
@@ -179,6 +188,8 @@ StatsServer.prototype.aggregateStats = function() {
       this.data.aggregated.lagavg[0] += workerStats.lagavg[0];
       this.data.aggregated.lagavg[1] += workerStats.lagavg[1];
       this.data.aggregated.lagavg[2] += workerStats.lagavg[2];
+      this.data.aggregated.activeHandles += workerStats.activeHandles;
+      this.data.aggregated.activeRequests += workerStats.activeRequests;
     }
   }
 
@@ -231,7 +242,9 @@ if(cluster.isWorker && cluster.worker) {
           uptime: process.uptime(),
           filename: process.argv[1],
           lagmax: process.lagmax(),
-          lagavg: process.lagavg()
+          lagavg: process.lagavg(),
+          activeHandles: process._getActiveHandles().length,
+          activeRequests: process._getActiveRequests().length
         }
       });
 
