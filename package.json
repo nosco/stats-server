@@ -1,6 +1,6 @@
 {
   "name": "stats-server",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "description": "Stats Server enables a webpage with stats for you app",
   "keywords": [
     "json",
@@ -24,7 +24,7 @@
     "url": "http://github.com/nosco/stats-server/issues"
   },
   "dependencies": {
-    "toobusy": "^0.2.4"
+    "toobusy-js": "^0.3.1"
   },
   "devDependencies": {},
   "scripts": {},

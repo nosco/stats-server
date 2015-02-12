@@ -1,6 +1,6 @@
 var os = require('os');
 var http = require('http');
-var toobusy = require('toobusy');
+var toobusy = require('toobusy-js');
 
 var cluster = require('cluster');
 
